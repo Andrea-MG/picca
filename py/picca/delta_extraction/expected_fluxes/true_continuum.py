@@ -318,9 +318,20 @@ class TrueContinuum(ExpectedFlux):
         indx = np.where(true_cont["TARGETID"]==forest.targetid)
         true_continuum = interp1d(lambda_, true_cont["TRUE_CONT"][indx])
 
+        
+        if Forest.wave_solution == "log":
+            mean_optical_depth = np.ones(forest.log_lambda.size)
+            tau, gamma, lambda_rest_frame = 0.011, 0.6, 1549.06
+            w = 10.**forest.log_lambda / (1. + forest.z) <= lambda_rest_frame
+            z = 10.**forest.log_lambda / lambda_rest_frame - 1.
+            mean_optical_depth[w] *= np.exp(-tau * (1. + z[w])**gamma)
+            
         if Forest.wave_solution == "log":
             forest.continuum = true_continuum(10**forest.log_lambda)[0]
-            forest.continuum *= self.get_mean_flux(10**forest.log_lambda)
+            #forest.continuum *= self.get_mean_flux(10**forest.log_lambda)
+            forest.continuum *= mean_optical_depth
+
+
 
         elif Forest.wave_solution == "lin":
             forest.continuum = true_continuum(forest.lambda_)[0]
@@ -356,53 +367,54 @@ class TrueContinuum(ExpectedFlux):
             raise ExpectedFluxError(f"raw statistics file {filename} couldn't be loaded")
 
         header = hdul[1].header
-        if Forest.wave_solution == "log":
-            if (
-                header['LINEAR'] 
-                or not np.isclose(header['L_MIN'], 10**Forest.log_lambda_min, rtol=1e-3) 
-                or not np.isclose(header['L_MAX'], 10**Forest.log_lambda_max, rtol=1e-3)  
-                or not np.isclose(header['LR_MIN'], 10**Forest.log_lambda_min_rest_frame, rtol=1e-3)
-                or not np.isclose(header['LR_MAX'], 10**Forest.log_lambda_max_rest_frame, rtol=1e-3)
-                or not np.isclose(header['DEL_LL'], Forest.delta_log_lambda, rtol=1e-3)
-            ):
-                raise ExpectedFluxError(f'''raw statistics file pixelization scheme does not match input pixelization scheme. 
-                \t\tL_MIN\tL_MAX\tLR_MIN\tLR_MAX\tDEL_LL
-                raw\t{header['L_MIN']}\t{header['L_MAX']}\t{header['LR_MIN']}\t{header['LR_MAX']}\t{header['DEL_LL']}
-                input\t{10**Forest.log_lambda_min}\t{10**Forest.log_lambda_max}\t{10**Forest.log_lambda_min_rest_frame}\t{10**Forest.log_lambda_max_rest_frame}\t{Forest.delta_log_lambda}
-                provide a custom file in 'raw statistics file' field matching input pixelization scheme''')
-        elif Forest.wave_solution == "lin":
-            if (
-                not header['LINEAR'] 
-                or not np.isclose(header['L_MIN'], Forest.lambda_min , rtol=1e-3)
-                or not np.isclose(header['L_MAX'], Forest.lambda_max , rtol=1e-3)
-                or not np.isclose(header['LR_MIN'], Forest.lambda_min_rest_frame, rtol=1e-3)
-                or not np.isclose(header['LR_MAX'], Forest.lambda_max_rest_frame, rtol=1e-3)
-                or not np.isclose(header['DEL_L'], Forest.delta_lambda, rtol=1e-3)
-            ):
-                raise ExpectedFluxError(f'''raw statistics file pixelization scheme does not match input pixelization scheme. 
-                \tL_MIN\tL_MAX\tLR_MIN\tLR_MAX\tDEL_LL
-                raw\t{header['L_MIN']}\t{header['L_MAX']}\t{header['LR_MIN']}\t{header['LR_MAX']}\t{header['DEL_LL']}
-                input\t{Forest.lambda_min}\t{Forest.lambda_max}\t{Forest.lambda_min_rest_frame}\t{Forest.lambda_max_rest_frame}\t{Forest.delta_lambda}
-                provide a custom file in 'raw statistics file' field matching input pixelization scheme''')
+       # if Forest.wave_solution == "log":
+      #      if (
+      #          header['LINEAR'] 
+      #          or not np.isclose(header['L_MIN'], 10**Forest.log_lambda_min, rtol=1e-3) 
+      #          or not np.isclose(header['L_MAX'], 10**Forest.log_lambda_max, rtol=1e-3)  
+      #          or not np.isclose(header['LR_MIN'], 10**Forest.log_lambda_min_rest_frame, rtol=1e-3)
+     #           or not np.isclose(header['LR_MAX'], 10**Forest.log_lambda_max_rest_frame, rtol=1e-3)
+      #          or not np.isclose(header['DEL_LL'], Forest.delta_log_lambda, rtol=1e-3)
+      #      ):
+       #         raise ExpectedFluxError(f'''raw statistics file pixelization scheme does not match input pixelization scheme. 
+     #           \t\tL_MIN\tL_MAX\tLR_MIN\tLR_MAX\tDEL_LL
+      #          raw\t{header['L_MIN']}\t{header['L_MAX']}\t{header['LR_MIN']}\t{header['LR_MAX']}\t{header['DEL_LL']}
+                #input\t{10**Forest.log_lambda_min}\t{10**Forest.log_lambda_max}\t{10**Forest.log_lambda_min_rest_frame}\t{10**Forest.log_lambda_max_rest_frame}\t{Forest.delta_log_lambda}
+  #              provide a custom file in 'raw statistics file' field matching input pixelization scheme''')
+  #      elif Forest.wave_solution == "lin":
+  #          if (
+   #             not header['LINEAR'] 
+  #              or not np.isclose(header['L_MIN'], Forest.lambda_min , rtol=1e-3)
+  # #             or not np.isclose(header['L_MAX'], Forest.lambda_max , rtol=1e-3)
+  #              or not np.isclose(header['LR_MIN'], Forest.lambda_min_rest_frame, rtol=1e-3)
+  #              or not np.isclose(header['LR_MAX'], Forest.lambda_max_rest_frame, rtol=1e-3)
+  #              or not np.isclose(header['DEL_L'], Forest.delta_lambda, rtol=1e-3)
+  #          ):
+#                raise ExpectedFluxError(f'''raw statistics file pixelization scheme does not match input pixelization scheme. 
+   #             \tL_MIN\tL_MAX\tLR_MIN\tLR_MAX\tDEL_LL
+ #               raw\t{header['L_MIN']}\t{header['L_MAX']}\t{header['LR_MIN']}\t{header['LR_MAX']}\t{header['DEL_LL']}
+  #              input\t{Forest.lambda_min}\t{Forest.lambda_max}\t{Forest.lambda_min_rest_frame}\t{Forest.lambda_max_rest_frame}\t{Forest.delta_lambda}
+  #              provide a custom file in 'raw statistics file' field matching input pixelization scheme''')
 
-        lambda_ = hdul[1].data['loglam'] # AMG
-        flux_variance = hdul[1].data['var_lss'] # AMG
+        lambda_ = hdul[2].data['loglam'] # AMG
+        var_lss = hdul[2].data['var_lss'] # AMG
         #lambda_ = hdul[1].data['LAMBDA']
-        #flux_variance = hdul[1].data['VAR']
-        mean_flux = hdul[1].data['MEANFLUX']
+        #flux_variance = hdul[1].data['VAR']            
+        #mean_flux = hdul[1].data['MEANFLUX']
+    
         hdul.close()
 
-        var_lss = flux_variance/mean_flux**2
+        #var_lss = flux_variance/mean_flux**2
 
         self.get_var_lss = interp1d(lambda_,
                                     var_lss,
                                     fill_value='extrapolate',
                                     kind='nearest')
 
-        self.get_mean_flux = interp1d(lambda_,
-                                      mean_flux,
-                                      fill_value='extrapolate',
-                                      kind='nearest')
+        #self.get_mean_flux = interp1d(lambda_,
+        #                              mean_flux,
+        #                              fill_value='extrapolate',
+        #                              kind='nearest')
 
     def populate_los_ids(self, forests):
         """Populate the dictionary los_ids with the mean expected flux, weights,
