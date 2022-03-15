@@ -385,8 +385,10 @@ class TrueContinuum(ExpectedFlux):
                 input\t{Forest.lambda_min}\t{Forest.lambda_max}\t{Forest.lambda_min_rest_frame}\t{Forest.lambda_max_rest_frame}\t{Forest.delta_lambda}
                 provide a custom file in 'raw statistics file' field matching input pixelization scheme''')
 
-        lambda_ = hdul[1].data['LAMBDA']
-        flux_variance = hdul[1].data['VAR']
+        lambda_ = hdul[1].data['loglam'] # AMG
+        flux_variance = hdul[1].data['var_lss'] # AMG
+        #lambda_ = hdul[1].data['LAMBDA']
+        #flux_variance = hdul[1].data['VAR']
         mean_flux = hdul[1].data['MEANFLUX']
         hdul.close()
 
