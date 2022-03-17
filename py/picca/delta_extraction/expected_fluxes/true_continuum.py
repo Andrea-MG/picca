@@ -439,7 +439,7 @@ class TrueContinuum(ExpectedFlux):
 
             mean_expected_flux = forest.continuum
             var_pipe = 1. / forest.ivar/ forest.continuum**2
-            variance =  var_lss + var_pipe
+            variance =  var_pipe #AMG
             weights = 1. / variance
 
             if isinstance(forest, Pk1dForest):
